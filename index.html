@@ -38,6 +38,40 @@
 	<script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
 <![endif]-->
 
+	<style>
+.tab.dropdown {
+  position: relative;
+}
+.tab.dropdown .dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 30px;
+  left: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  list-style: none;
+  padding: 10px 0;
+  min-width: 180px;
+  z-index: 999;
+}
+.tab.dropdown .dropdown-menu li {
+  padding: 5px 20px;
+}
+.tab.dropdown .dropdown-menu li a {
+  color: #333;
+  display: block;
+  text-decoration: none;
+}
+.tab.dropdown:hover .dropdown-menu {
+  display: block;
+}
+.tab.dropdown > a {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+</style>
+
 </head>
 <body>
  <!-- Preloading -->
