@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Kalkulator Haid + Kalender</title>
+  <title>Kalkulator Haid + Kalender Dinamis</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     :root {
@@ -51,16 +51,17 @@
       box-sizing: border-box;
     }
 
-    button {
-      background-color: #d63384;
-      color: white;
-      font-weight: bold;
-      margin-top: 15px;
-      cursor: pointer;
+    .controls {
+      display: none;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      gap: 10px;
+      margin-top: 10px;
     }
 
-    button:hover {
-      background-color: #c2186a;
+    .controls.show {
+      display: flex;
+      opacity: 1;
     }
 
     .calendar {
@@ -138,14 +139,23 @@
 <div class="container">
   <h2>Kalkulator Haid + Kalender</h2>
 
-  <label for="lastPeriod">Tanggal Haid Terakhir:</label>
+  <label for="lastPeriod">Tanggal Pertama Haid Terakhir:</label>
   <input type="date" id="lastPeriod">
 
   <label for="cycleLength">Panjang Siklus (hari):</label>
   <input type="number" id="cycleLength" value="28" min="20" max="40">
 
-  <button onclick="generateCalendar()">Hitung</button>
+  <label for="periodDuration">Durasi Haid (hari):</label>
+  <input type="number" id="periodDuration" value="5" min="1" max="10">
 
+  <button onclick="initCalendar()">Hitung</button>
+
+  <div id="controls" class="controls">
+    <button onclick="changeMonth(-1)">← Bulan Sebelumnya</button>
+    <button onclick="changeMonth(1)">Bulan Berikutnya →</button>
+  </div>
+
+  <div id="monthLabel" style="text-align:center; margin-top:10px; font-weight:bold;"></div>
   <div id="calendar" class="calendar"></div>
 
   <div class="note">
@@ -157,35 +167,69 @@
 </div>
 
 <script>
-  function generateCalendar() {
-    const lastPeriodStr = document.getElementById('lastPeriod').value;
-    const cycleLength = parseInt(document.getElementById('cycleLength').value);
-    const calendarDiv = document.getElementById('calendar');
+  let lastPeriodDate = null;
+  let cycleLength = 28;
+  let periodDuration = 5;
+  let calendarMonth = new Date();
 
-    if (!lastPeriodStr || isNaN(cycleLength)) {
-      alert("Mohon isi tanggal haid dan panjang siklus");
+  function initCalendar() {
+    const lastPeriodStr = document.getElementById('lastPeriod').value;
+    cycleLength = parseInt(document.getElementById('cycleLength').value);
+    periodDuration = parseInt(document.getElementById('periodDuration').value);
+
+    if (!lastPeriodStr || isNaN(cycleLength) || isNaN(periodDuration)) {
+      alert("Mohon isi semua data dengan benar.");
       return;
     }
 
-    const lastDate = new Date(lastPeriodStr);
-    const nextPeriod = new Date(lastDate);
-    nextPeriod.setDate(nextPeriod.getDate() + cycleLength);
+    lastPeriodDate = new Date(lastPeriodStr);
+    calendarMonth = new Date(lastPeriodDate);
 
-    const ovulation = new Date(lastDate);
-    ovulation.setDate(ovulation.getDate() + (cycleLength - 14));
+    // Tampilkan tombol navigasi bulan dengan animasi
+    const controls = document.getElementById("controls");
+    controls.classList.add("show");
 
-    const fertileStart = new Date(ovulation);
-    fertileStart.setDate(fertileStart.getDate() - 5);
+    generateCalendar();
+  }
 
-    const fertileEnd = new Date(ovulation);
-    fertileEnd.setDate(fertileEnd.getDate() + 1);
+  function changeMonth(offset) {
+    calendarMonth.setMonth(calendarMonth.getMonth() + offset);
+    generateCalendar();
+  }
 
-    const tahun = nextPeriod.getFullYear();
-    const bulan = nextPeriod.getMonth();
+  function generateCalendar() {
+    if (!lastPeriodDate) return;
+
+    const calendarDiv = document.getElementById('calendar');
+    const monthLabel = document.getElementById('monthLabel');
+    const tahun = calendarMonth.getFullYear();
+    const bulan = calendarMonth.getMonth();
     const firstDay = new Date(tahun, bulan, 1).getDay();
     const daysInMonth = new Date(tahun, bulan + 1, 0).getDate();
 
+    const prediksi = [];
+    for (let i = 0; i < 6; i++) {
+      const base = new Date(lastPeriodDate);
+      base.setDate(base.getDate() + i * cycleLength);
+
+      const periodStart = new Date(base);
+      const periodEnd = new Date(base);
+      periodEnd.setDate(periodEnd.getDate() + periodDuration - 1);
+
+      const ovulation = new Date(base);
+      ovulation.setDate(ovulation.getDate() + (cycleLength - 14));
+
+      const fertileStart = new Date(ovulation);
+      fertileStart.setDate(fertileStart.getDate() - 5);
+
+      const fertileEnd = new Date(ovulation);
+      fertileEnd.setDate(fertileEnd.getDate() + 1);
+
+      prediksi.push({ periodStart, periodEnd, ovulation, fertileStart, fertileEnd });
+    }
+
     calendarDiv.innerHTML = "";
+    monthLabel.textContent = calendarMonth.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
 
     const hari = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
     hari.forEach(h => {
@@ -205,9 +249,11 @@
       cell.className = 'day';
       cell.textContent = d;
 
-      if (sameDate(current, nextPeriod)) cell.classList.add('haid');
-      if (sameDate(current, ovulation)) cell.classList.add('ovulasi');
-      if (current >= fertileStart && current <= fertileEnd) cell.classList.add('fertile');
+      prediksi.forEach(p => {
+        if (current >= p.periodStart && current <= p.periodEnd) cell.classList.add('haid');
+        if (current >= p.fertileStart && current <= p.fertileEnd) cell.classList.add('fertile');
+        if (sameDate(current, p.ovulation)) cell.classList.add('ovulasi');
+      });
 
       calendarDiv.appendChild(cell);
     }
