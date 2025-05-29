@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Jadwal Sholat JABODETABEK</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Islamic Style -->
+  <style>
+    body {
+      background: #e6f0ea;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .container {
+      max-width: 600px;
+      margin-top: 40px;
+    }
+    h1 {
+      font-family: 'Times New Roman', serif;
+      color: #2f684e;
+      font-weight: bold;
+    }
+    .table {
+      background: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .bg-islamic {
+      background: #4CAF50;
+      color: white;
+    }
+    .icon-islami {
+      font-size: 30px;
+      color: #4CAF50;
+    }
+    .select-box {
+      background: #f1f8f5;
+      padding: 10px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container text-center">
+  <div class="mb-3">
+    <span class="icon-islami">☪️</span>
+    <h1>Jadwal Sholat</h1>
+    <p class="text-muted">Wilayah JABODETABEK</p>
+  </div>
+
+  <div class="select-box mb-4">
+    <label for="kotaSelector" class="form-label fw-bold">Pilih Kota</label>
+    <select id="kotaSelector" class="form-select">
+      <option value="Bogor">Bogor</option>
+      <option value="Depok">Depok</option>
+      <option value="Jakarta">Jakarta</option>
+      <option value="Tangerang">Tangerang</option>
+      <option value="Naringan">Blora</option>
+    </select>
+  </div>
+
+  <p id="lokasi" class="fw-bold text-success">Memuat...</p>
+  <p id="tanggal" class="text-muted"></p>
+
+  <table class="table table-bordered">
+    <thead class="bg-islamic">
+      <tr>
+        <th>Sholat</th>
+        <th>Waktu</th>
+      </tr>
+    </thead>
+    <tbody id="jadwal-sholat">
+      <tr><td colspan="2">Memuat...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Jadwal Sholat Script -->
+<script>
+  const negara = "Indonesia";
+  const daftarSholat = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+  const kotaSelector = document.getElementById('kotaSelector');
+  const lokasiEl = document.getElementById('lokasi');
+  const tanggalEl = document.getElementById('tanggal');
+  const tbody = document.getElementById('jadwal-sholat');
+
+  function ambilJadwalSholat(kota) {
+    lokasiEl.textContent = `Memuat jadwal untuk ${kota}...`;
+    tbody.innerHTML = "<tr><td colspan='2'>Memuat...</td></tr>";
+
+    const apiURL = `https://api.aladhan.com/v1/timingsByCity?city=${kota}&country=${negara}&method=2`;
+
+    fetch(apiURL)
+      .then(res => res.json())
+      .then(data => {
+        const jadwal = data.data.timings;
+        const tanggal = data.data.date.readable;
+
+        lokasiEl.textContent = `Kota: ${kota}, Negara: ${negara}`;
+        tanggalEl.textContent = `Tanggal: ${tanggal}`;
+        tbody.innerHTML = "";
+
+        daftarSholat.forEach(sholat => {
+          const row = document.createElement('tr');
+          row.innerHTML = `<td>${ubahKeLabel(sholat)}</td><td>${jadwal[sholat]}</td>`;
+          tbody.appendChild(row);
+        });
+      })
+      .catch(err => {
+        lokasiEl.textContent = `Gagal memuat jadwal untuk ${kota}`;
+        tbody.innerHTML = "<tr><td colspan='2'>Terjadi kesalahan.</td></tr>";
+        console.error(err);
+      });
+  }
+
+  function ubahKeLabel(kode) {
+    const label = {
+      Fajr: 'Subuh',
+      Dhuhr: 'Dzuhur',
+      Asr: 'Ashar',
+      Maghrib: 'Maghrib',
+      Isha: 'Isya'
+    };
+    return label[kode] || kode;
+  }
+
+  // Load default
+  ambilJadwalSholat(kotaSelector.value);
+  kotaSelector.addEventListener('change', () => ambilJadwalSholat(kotaSelector.value));
+</script>
+
+</body>
+</html>
