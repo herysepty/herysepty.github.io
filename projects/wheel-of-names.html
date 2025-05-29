@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Wheel of Names</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background-color: #a18e8e;
+      color: white;
+      text-align: center;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    canvas#wheel {
+      margin-top: 20px;
+      border-radius: 50%;
+      background-color: #222;
+      box-shadow: 0 0 10px rgba(255,255,255,0.2);
+      width: 100%;
+      max-width: 400px;
+      height: auto;
+    }
+
+    #confetti-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    .modal-content {
+      background-color: #fdfdfd;
+      border-radius: 1rem;
+      text-align: center;
+    }
+
+    .winner-icon {
+      font-size: 50px;
+      color: #ffc107;
+    }
+
+    .btn-delete {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    .btn-delete:hover {
+      background-color: #bb2d3b;
+    }
+
+    .form-control::placeholder {
+      color: #ccc;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container py-4">
+    <h1 class="mb-4">🎯 Wheel of Names</h1>
+
+    <div class="row justify-content-center mb-3">
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="input-group">
+          <input type="text" id="nameInput" class="form-control" placeholder="Masukkan nama (pisahkan dengan koma)">
+          <button class="btn btn-primary" onclick="addName()">Tambah</button>
+        </div>
+        <div class="form-text text-warning small" id="warningText" style="display:none;">Nama sudah ada atau kosong!</div>
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <button class="btn btn-danger btn-sm me-2" onclick="clearNames()">Hapus Semua</button>
+      <button class="btn btn-success btn-sm" onclick="spin()">🎡 SPIN</button>
+    </div>
+
+    <div id="nameList" class="mb-3 small text-muted"></div>
+
+    <canvas id="wheel" width="400" height="400"></canvas>
+    <canvas id="confetti-canvas"></canvas>
+
+    <div id="lastWinner" class="text-warning mt-3 fw-bold"></div>
+
+    <div class="container mt-4">
+      <h5 class="text-light">🏆 Daftar Pemenang:</h5>
+      <ul id="winnerList" class="list-group list-group-flush"></ul>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="winnerModal" tabindex="-1" aria-labelledby="winnerLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content p-4">
+        <div class="modal-body">
+          <div class="winner-icon mb-3">🎉</div>
+          <h4 class="mb-3">Pemenangnya adalah:</h4>
+          <h2 id="winnerName" class="fw-bold text-primary"></h2>
+          <div class="mt-4 d-grid gap-2">
+            <button class="btn btn-delete" onclick="deleteWinner()">🗑️ Hapus dari daftar</button>
+            <button class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS + Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <script>
+    let names = ["Hery","Intan","Anisa","Dimas","Rina","Budi","Siti","Joko","Tina"];
+    let pendingWinner = null;
+    const colors = ["#f5e7e1", "#ffa24d", "#d6411c", "#4a160e"];
+    const canvas = document.getElementById("wheel");
+    const ctx = canvas.getContext("2d");
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = centerX - 10;
+    let rotation = 0;
+    let spinning = false;
+
+    function updateNameList() {
+      document.getElementById("nameList").innerText =
+        names.length > 0 ? "Peserta: " + names.join(", ") : "Belum ada nama yang dimasukkan.";
+    }
+
+    function drawWheel(angleOffset = 0) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const numSegments = names.length;
+      const anglePerSegment = 2 * Math.PI / numSegments;
+
+      for (let i = 0; i < numSegments; i++) {
+        const angle = angleOffset + i * anglePerSegment;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, angle, angle + anglePerSegment);
+        ctx.fillStyle = colors[i % colors.length];
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(angle + anglePerSegment / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "white";
+        ctx.font = "14px sans-serif";
+        ctx.fillText(names[i], radius - 10, 10);
+        ctx.restore();
+      }
+
+      ctx.fillStyle = "white";
+      ctx.beginPath();
+      ctx.moveTo(centerX + radius - 10, centerY);
+      ctx.lineTo(centerX + radius + 20, centerY - 10);
+      ctx.lineTo(centerX + radius + 20, centerY + 10);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+
+    function spin() {
+      if (spinning || names.length === 0) return;
+      spinning = true;
+
+      const duration = 5000;
+      const spins = 5 + Math.random() * 2;
+      const finalRotation = spins * 2 * Math.PI;
+      const numSegments = names.length;
+      const anglePerSegment = 2 * Math.PI / numSegments;
+      const startTime = performance.now();
+
+      function animate(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easedProgress = easeOutCubic(progress);
+        rotation = finalRotation * easedProgress;
+
+        drawWheel(rotation);
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          spinning = false;
+          const finalAngle = rotation % (2 * Math.PI);
+          const winningIndex = Math.floor((numSegments - finalAngle / anglePerSegment) % numSegments);
+          const winner = names[winningIndex];
+
+          pendingWinner = winner;
+          showConfetti();
+          showWinnerModal(winner);
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    function showConfetti() {
+      const confettiCanvas = document.getElementById("confetti-canvas");
+      const myConfetti = confetti.create(confettiCanvas, {
+        resize: true,
+        useWorker: true
+      });
+
+      myConfetti({
+        particleCount: 200,
+        spread: 120,
+        origin: { y: 0.5 }
+      });
+    }
+
+    function showWinnerModal(name) {
+      document.getElementById("winnerName").innerText = name;
+      const modal = new bootstrap.Modal(document.getElementById("winnerModal"));
+      modal.show();
+    }
+
+    function deleteWinner() {
+      if (pendingWinner !== null) {
+        names = names.filter(name => name !== pendingWinner);
+
+        document.getElementById("lastWinner").innerText = `🎉 Pemenang Terakhir: ${pendingWinner}`;
+
+        const winnerList = document.getElementById("winnerList");
+        const li = document.createElement("li");
+        li.textContent = pendingWinner;
+        li.className = "list-group-item bg-dark text-light";
+        winnerList.appendChild(li);
+
+        pendingWinner = null;
+        updateNameList();
+        drawWheel();
+
+        const modalElement = document.getElementById("winnerModal");
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        modal.hide();
+      }
+    }
+
+    function addName() {
+      const input = document.getElementById("nameInput");
+      const warning = document.getElementById("warningText");
+      const raw = input.value.trim();
+
+      if (!raw) return;
+
+      const newNames = raw.split(",")
+        .map(n => n.trim())
+        .filter(n => n.length > 0 && !names.includes(n));
+
+      if (newNames.length === 0) {
+        warning.style.display = "block";
+        return;
+      }
+
+      names.push(...newNames);
+      input.value = "";
+      warning.style.display = "none";
+      updateNameList();
+      drawWheel();
+    }
+
+    function clearNames() {
+      names = [];
+      updateNameList();
+      drawWheel();
+    }
+
+    updateNameList();
+    drawWheel();
+  </script>
+</body>
+</html>
