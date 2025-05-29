@@ -4,13 +4,11 @@
   <meta charset="UTF-8">
   <title>Wheel of Names</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
   <style>
     body {
-      background-color: #a18e8e;
+      background-color: #121212;
       color: white;
       text-align: center;
       font-family: 'Segoe UI', sans-serif;
@@ -59,6 +57,32 @@
     .form-control::placeholder {
       color: #ccc;
     }
+
+    .spin-button-center {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+      background-color: #28a745;
+      border: none;
+      color: white;
+      font-size: 32px;
+      border-radius: 50%;
+      width: 70px;
+      height: 70px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    .spin-button-center:hover {
+      transform: translate(-50%, -50%) scale(1.1);
+    }
+
+    .spin-button-center.spinning {
+      background-color: #ffc107 !important;
+    }
   </style>
 </head>
 <body>
@@ -78,12 +102,15 @@
 
     <div class="mb-3">
       <button class="btn btn-danger btn-sm me-2" onclick="clearNames()">Hapus Semua</button>
-      <button class="btn btn-success btn-sm" onclick="spin()">🎡 SPIN</button>
     </div>
 
     <div id="nameList" class="mb-3 small text-muted"></div>
 
-    <canvas id="wheel" width="400" height="400"></canvas>
+    <div style="position: relative; display: inline-block;">
+      <canvas id="wheel" width="400" height="400"></canvas>
+      <button class="spin-button-center" onclick="spin()">▶</button>
+    </div>
+
     <canvas id="confetti-canvas"></canvas>
 
     <div id="lastWinner" class="text-warning mt-3 fw-bold"></div>
@@ -111,12 +138,11 @@
     </div>
   </div>
 
-  <!-- Bootstrap JS + Confetti -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
   <script>
-    let names = ["Hery","Intan","Anisa","Dimas","Rina","Budi","Siti","Joko","Tina"];
+    let names = ["Ali", "Beatriz", "Charles", "Diya", "Fatima"];
     let pendingWinner = null;
     const colors = ["#f5e7e1", "#ffa24d", "#d6411c", "#4a160e"];
     const canvas = document.getElementById("wheel");
@@ -173,6 +199,9 @@
       if (spinning || names.length === 0) return;
       spinning = true;
 
+      const spinButton = document.querySelector(".spin-button-center");
+      spinButton.classList.add("spinning");
+
       const duration = 5000;
       const spins = 5 + Math.random() * 2;
       const finalRotation = spins * 2 * Math.PI;
@@ -192,6 +221,8 @@
           requestAnimationFrame(animate);
         } else {
           spinning = false;
+          spinButton.classList.remove("spinning");
+
           const finalAngle = rotation % (2 * Math.PI);
           const winningIndex = Math.floor((numSegments - finalAngle / anglePerSegment) % numSegments);
           const winner = names[winningIndex];
