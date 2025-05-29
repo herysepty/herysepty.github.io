@@ -5,14 +5,22 @@
   <title>Kalkulator Haid + Kalender</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
+    :root {
+      --haid-color: #ffccd5;
+      --subur-color: #d4edda;
+      --ovulasi-color: #a4e0bc;
+    }
+
     body {
       font-family: Arial, sans-serif;
       background: #f8f9fa;
+      margin: 0;
       padding: 20px;
+      color: #333;
     }
 
     .container {
-      max-width: 500px;
+      max-width: 600px;
       margin: auto;
       background: white;
       padding: 20px;
@@ -23,6 +31,7 @@
     h2 {
       text-align: center;
       color: #d63384;
+      margin-bottom: 20px;
     }
 
     label {
@@ -31,12 +40,15 @@
       font-weight: bold;
     }
 
-    input, button {
+    input,
+    button {
       width: 100%;
       padding: 10px;
       margin-top: 5px;
       border-radius: 5px;
       border: 1px solid #ccc;
+      font-size: 16px;
+      box-sizing: border-box;
     }
 
     button {
@@ -55,15 +67,15 @@
       margin-top: 20px;
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 5px;
-      font-size: 14px;
+      gap: 6px;
     }
 
     .day {
       text-align: center;
-      padding: 8px;
-      border-radius: 5px;
+      padding: 10px 0;
+      border-radius: 6px;
       background: #f1f1f1;
+      font-size: 14px;
     }
 
     .header {
@@ -72,24 +84,52 @@
     }
 
     .haid {
-      background: #ffccd5;
+      background: var(--haid-color);
       color: #721c24;
       font-weight: bold;
     }
 
     .fertile {
-      background: #d4edda;
+      background: var(--subur-color);
       color: #155724;
     }
 
     .ovulasi {
-      background: #a4e0bc;
+      background: var(--ovulasi-color);
       border: 2px solid #198754;
+      font-weight: bold;
     }
 
     .note {
       margin-top: 15px;
       font-size: 13px;
+    }
+
+    .note span {
+      padding: 4px 8px;
+      border-radius: 5px;
+      margin-right: 5px;
+      display: inline-block;
+    }
+
+    @media screen and (max-width: 480px) {
+      .container {
+        padding: 15px;
+      }
+
+      input,
+      button {
+        font-size: 15px;
+      }
+
+      .day {
+        padding: 8px 0;
+        font-size: 13px;
+      }
+
+      h2 {
+        font-size: 20px;
+      }
     }
   </style>
 </head>
@@ -110,9 +150,9 @@
 
   <div class="note">
     <strong>Keterangan:</strong><br>
-    <span style="background:#ffccd5;padding:2px 6px;border-radius:3px;">Haid Berikutnya</span>
-    <span style="background:#d4edda;padding:2px 6px;border-radius:3px;">Masa Subur</span>
-    <span style="background:#a4e0bc;padding:2px 6px;border-radius:3px;">Ovulasi</span>
+    <span style="background:var(--haid-color);">Haid</span>
+    <span style="background:var(--subur-color);">Masa Subur</span>
+    <span style="background:var(--ovulasi-color);">Ovulasi</span>
   </div>
 </div>
 
@@ -140,10 +180,9 @@
     const fertileEnd = new Date(ovulation);
     fertileEnd.setDate(fertileEnd.getDate() + 1);
 
-    // Buat kalender bulan depan
     const tahun = nextPeriod.getFullYear();
-    const bulan = nextPeriod.getMonth(); // 0-11
-    const firstDay = new Date(tahun, bulan, 1).getDay(); // 0 (Minggu) - 6
+    const bulan = nextPeriod.getMonth();
+    const firstDay = new Date(tahun, bulan, 1).getDay();
     const daysInMonth = new Date(tahun, bulan + 1, 0).getDate();
 
     calendarDiv.innerHTML = "";
@@ -166,17 +205,9 @@
       cell.className = 'day';
       cell.textContent = d;
 
-      if (sameDate(current, nextPeriod)) {
-        cell.classList.add('haid');
-      }
-
-      if (sameDate(current, ovulation)) {
-        cell.classList.add('ovulasi');
-      }
-
-      if (current >= fertileStart && current <= fertileEnd) {
-        cell.classList.add('fertile');
-      }
+      if (sameDate(current, nextPeriod)) cell.classList.add('haid');
+      if (sameDate(current, ovulation)) cell.classList.add('ovulasi');
+      if (current >= fertileStart && current <= fertileEnd) cell.classList.add('fertile');
 
       calendarDiv.appendChild(cell);
     }
