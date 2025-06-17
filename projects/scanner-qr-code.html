@@ -33,6 +33,7 @@
     #reader {
       width: 100%;
       margin: auto;
+      display: none;
     }
 
     .fade-in {
@@ -49,7 +50,16 @@
 
 <div class="container scanner-card fade-in text-center">
   <h2 class="mb-4 text-primary"><i class="bi bi-qr-code-scan me-2"></i>QR Code Scanner</h2>
-  
+
+  <!-- Mode pilihan -->
+  <div class="mb-3">
+    <div class="btn-group" role="group">
+      <button class="btn btn-outline-primary" onclick="useCamera()">📷 Kamera</button>
+      <button class="btn btn-outline-secondary" onclick="document.getElementById('file-input').click()">📁 Upload File</button>
+      <input type="file" id="file-input" accept="image/*" hidden onchange="scanFromFile(this)">
+    </div>
+  </div>
+
   <div id="reader" class="border rounded shadow mb-3"></div>
 
   <div class="alert alert-success d-none" id="scan-result">
@@ -60,7 +70,7 @@
     <button class="btn btn-outline-primary" onclick="restartScanner()">
       <i class="bi bi-arrow-repeat me-1"></i>Scan Ulang
     </button>
-    <button class="btn btn-outline-secondary" onclick="switchCamera()">
+    <button id="switch-btn" class="btn btn-outline-secondary d-none" onclick="switchCamera()">
       <i id="camera-icon" class="bi bi-camera-reverse me-1"></i>Ganti Kamera
     </button>
   </div>
@@ -71,24 +81,39 @@
   let cameras = [];
   let html5QrCode = null;
   let isBackCamera = true;
+  let readerVisible = false;
 
   async function initCameras() {
     try {
       cameras = await Html5Qrcode.getCameras();
       if (!cameras.length) throw new Error("Tidak ada kamera tersedia.");
 
-      // Cari kamera belakang terlebih dahulu
       const back = cameras.find(cam => cam.label.toLowerCase().includes("back") || cam.label.toLowerCase().includes("rear"));
       currentCameraId = back ? back.id : cameras[0].id;
-
-      startScanner(currentCameraId);
     } catch (e) {
       alert("Gagal mengakses kamera: " + e.message);
     }
   }
 
+  async function useCamera() {
+    document.getElementById("scan-result").classList.add("d-none");
+    document.getElementById("reader").style.display = "block";
+    document.getElementById("switch-btn").classList.remove("d-none"); // Tampilkan tombol switch kamera
+
+    if (!html5QrCode) {
+      html5QrCode = new Html5Qrcode("reader");
+    }
+
+    if (cameras.length === 0) {
+      await initCameras();
+    }
+
+    startScanner(currentCameraId);
+    readerVisible = true;
+  }
+
   function startScanner(cameraId) {
-    if (html5QrCode) {
+    if (html5QrCode.getState() === Html5QrcodeScannerState.SCANNING) {
       html5QrCode.stop().then(() => {
         html5QrCode.clear();
         runScanner(cameraId);
@@ -99,28 +124,33 @@
   }
 
   function runScanner(cameraId) {
-    html5QrCode = new Html5Qrcode("reader");
     html5QrCode.start(
       cameraId,
-      { fps: 10, qrbox: 250 },
+      {
+        fps: 10,
+        qrbox: 250,
+        videoConstraints: {
+          facingMode: isBackCamera ? "environment" : "user"
+        }
+      },
       onScanSuccess,
       onScanFailure
     ).catch(err => console.error("Start failed:", err));
   }
 
-  function onScanSuccess(decodedText, decodedResult) {
+  function onScanSuccess(decodedText) {
     document.getElementById("result-text").textContent = decodedText;
     document.getElementById("scan-result").classList.remove("d-none");
     html5QrCode.stop().then(() => html5QrCode.clear());
   }
 
   function onScanFailure(error) {
-    // optional: do nothing
+    // Do nothing
   }
 
   function restartScanner() {
     document.getElementById("scan-result").classList.add("d-none");
-    startScanner(currentCameraId);
+    if (readerVisible) startScanner(currentCameraId);
   }
 
   function switchCamera() {
@@ -132,13 +162,30 @@
       (!isBackCamera && cam.label.toLowerCase().includes("front"))
     );
 
-    currentCameraId = nextCam ? nextCam.id : (isBackCamera ? cameras[0].id : cameras[1].id);
+    currentCameraId = nextCam ? nextCam.id : cameras[1].id;
     document.getElementById("camera-icon").className = isBackCamera ? "bi bi-camera-reverse me-1" : "bi bi-camera me-1";
     restartScanner();
   }
 
-  // Mulai otomatis
-  initCameras();
+  function scanFromFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    document.getElementById("switch-btn").classList.add("d-none"); // Sembunyikan switch kamera
+    document.getElementById("reader").style.display = "block";
+
+    if (!html5QrCode) {
+      html5QrCode = new Html5Qrcode("reader");
+    }
+
+    html5QrCode.scanFile(file, true)
+      .then(decodedText => {
+        document.getElementById("result-text").textContent = decodedText;
+        document.getElementById("scan-result").classList.remove("d-none");
+        html5QrCode.clear();
+      })
+      .catch(err => alert("Gagal membaca QR: " + err));
+  }
 </script>
 
 </body>
