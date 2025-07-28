@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generator String Random</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .checkbox-item:hover {
+            background: #e9ecef;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+            min-width: 120px;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .result-container {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px dashed #dee2e6;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .result {
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            word-break: break-all;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #28a745;
+            font-size: 12px;
+            padding: 5px 10px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .result-container:hover .copy-btn {
+            opacity: 1;
+        }
+
+        .empty-state {
+            color: #999;
+            font-style: italic;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            .checkbox-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎲 Generator String Random</h1>
+        
+        <div class="input-group">
+            <label for="length">Panjang String:</label>
+            <input type="number" id="length" min="1" max="100" value="12">
+        </div>
+
+        <div class="checkbox-group">
+            <div class="checkbox-item">
+                <input type="checkbox" id="uppercase" checked>
+                <label for="uppercase">Huruf Besar (A-Z)</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="lowercase" checked>
+                <label for="lowercase">Huruf Kecil (a-z)</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="numbers" checked>
+                <label for="numbers">Angka (0-9)</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="special" checked>
+                <label for="special">Karakter Spesial</label>
+            </div>
+        </div>
+
+        <button class="btn" onclick="generateString()">Generate String</button>
+        <button class="btn" onclick="generateMultiple()">Generate 5 String</button>
+
+        <div class="result-container" id="resultContainer">
+            <div class="result empty-state">Klik tombol generate untuk membuat string random</div>
+            <button class="copy-btn" onclick="copyToClipboard()">Copy</button>
+        </div>
+    </div>
+
+    <div class="notification" id="notification">String berhasil disalin!</div>
+
+    <script>
+        function generateRandomString(length, includeUppercase, includeLowercase, includeNumbers, includeSpecial) {
+            let charset = '';
+            
+            if (includeUppercase) charset += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            if (includeLowercase) charset += 'abcdefghijklmnopqrstuvwxyz';
+            if (includeNumbers) charset += '0123456789';
+            if (includeSpecial) charset += '!@#$%^&*()_+-=[]{}|;:,.<>?';
+            
+            if (charset === '') {
+                return 'Pilih minimal satu jenis karakter!';
+            }
+            
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += charset.charAt(Math.floor(Math.random() * charset.length));
+            }
+            
+            return result;
+        }
+
+        function generateString() {
+            const length = parseInt(document.getElementById('length').value);
+            const includeUppercase = document.getElementById('uppercase').checked;
+            const includeLowercase = document.getElementById('lowercase').checked;
+            const includeNumbers = document.getElementById('numbers').checked;
+            const includeSpecial = document.getElementById('special').checked;
+            
+            if (length < 1 || length > 100) {
+                alert('Panjang string harus antara 1-100 karakter!');
+                return;
+            }
+            
+            const randomString = generateRandomString(length, includeUppercase, includeLowercase, includeNumbers, includeSpecial);
+            
+            const resultContainer = document.getElementById('resultContainer');
+            const resultElement = resultContainer.querySelector('.result');
+            
+            resultElement.textContent = randomString;
+            resultElement.classList.remove('empty-state');
+        }
+
+        function generateMultiple() {
+            const length = parseInt(document.getElementById('length').value);
+            const includeUppercase = document.getElementById('uppercase').checked;
+            const includeLowercase = document.getElementById('lowercase').checked;
+            const includeNumbers = document.getElementById('numbers').checked;
+            const includeSpecial = document.getElementById('special').checked;
+            
+            if (length < 1 || length > 100) {
+                alert('Panjang string harus antara 1-100 karakter!');
+                return;
+            }
+            
+            let results = [];
+            for (let i = 0; i < 5; i++) {
+                results.push(generateRandomString(length, includeUppercase, includeLowercase, includeNumbers, includeSpecial));
+            }
+            
+            const resultContainer = document.getElementById('resultContainer');
+            const resultElement = resultContainer.querySelector('.result');
+            
+            resultElement.innerHTML = results.join('<br>');
+            resultElement.classList.remove('empty-state');
+        }
+
+        function copyToClipboard() {
+            const resultElement = document.querySelector('.result');
+            const text = resultElement.textContent;
+            
+            if (text && !resultElement.classList.contains('empty-state')) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showNotification();
+                }).catch(() => {
+                    // Fallback untuk browser lama
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    showNotification();
+                });
+            }
+        }
+
+        function showNotification() {
+            const notification = document.getElementById('notification');
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 2000);
+        }
+
+        // Generate string otomatis saat halaman dimuat
+        window.addEventListener('load', () => {
+            generateString();
+        });
+
+        // Generate dengan Enter key
+        document.getElementById('length').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                generateString();
+            }
+        });
+    </script>
+</body>
+</html>
