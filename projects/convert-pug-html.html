@@ -2,12 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Pug to HTML Converter</title>
+  <title>Pug to HTML Preview</title>
   <script src="https://cdn.jsdelivr.net/npm/pug@3.0.2/pug.min.js"></script>
   <style>
     body {
       font-family: sans-serif;
       padding: 20px;
+      max-width: 800px;
+      margin: auto;
+    }
+    textarea {
+      width: 100%;
+      height: 200px;
+      font-family: monospace;
+      font-size: 14px;
+      padding: 10px;
+    }
+    button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
     }
     iframe {
       width: 100%;
@@ -18,29 +32,30 @@
   </style>
 </head>
 <body>
-  <h2>Convert PUG to HTML & Preview</h2>
-  <input type="file" id="pugFile" accept=".pug" />
+  <h2>Convert PUG Code to HTML & Preview</h2>
+  <label for="pugInput">Paste your PUG code below:</label>
+  <textarea id="pugInput" placeholder="html\n  head\n    title Judul\n  body\n    h1 Hello Pug!"></textarea>
+  <br>
+  <button onclick="convertPug()">Convert & Preview</button>
+
+  <h3>Generated HTML:</h3>
   <pre id="htmlOutput"></pre>
+
+  <h3>Live Preview:</h3>
   <iframe id="preview"></iframe>
 
   <script>
-    document.getElementById('pugFile').addEventListener('change', function (event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const pugCode = e.target.result;
-        try {
-          const compiledHTML = pug.render(pugCode);
-          document.getElementById('htmlOutput').textContent = compiledHTML;
-          document.getElementById('preview').srcdoc = compiledHTML;
-        } catch (err) {
-          alert("Error compiling PUG: " + err.message);
-        }
-      };
-      reader.readAsText(file);
-    });
+    function convertPug() {
+      const pugCode = document.getElementById('pugInput').value;
+      try {
+        const html = pug.render(pugCode);
+        document.getElementById('htmlOutput').textContent = html;
+        document.getElementById('preview').srcdoc = html;
+      } catch (err) {
+        document.getElementById('htmlOutput').textContent = '❌ Error: ' + err.message;
+        document.getElementById('preview').srcdoc = '';
+      }
+    }
   </script>
 </body>
 </html>
