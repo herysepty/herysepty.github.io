@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <title>Pug to HTML Preview</title>
+
+  <!-- Pug browser version -->
   <script src="https://cdn.jsdelivr.net/npm/pug@3.0.2/pug.min.js"></script>
+
   <style>
     body {
       font-family: sans-serif;
@@ -23,6 +26,13 @@
       padding: 10px 20px;
       font-size: 16px;
     }
+    pre {
+      background: #f0f0f0;
+      padding: 10px;
+      white-space: pre-wrap;
+      border: 1px solid #ddd;
+      margin-top: 10px;
+    }
     iframe {
       width: 100%;
       height: 400px;
@@ -32,11 +42,12 @@
   </style>
 </head>
 <body>
-  <h2>Convert PUG Code to HTML & Preview</h2>
+  <h2>Pug to HTML Live Preview</h2>
+
   <label for="pugInput">Paste your PUG code below:</label>
   <textarea id="pugInput" placeholder="html\n  head\n    title Judul\n  body\n    h1 Hello Pug!"></textarea>
   <br>
-  <button onclick="convertPug()">Convert & Preview</button>
+  <button id="convertBtn">Convert & Preview</button>
 
   <h3>Generated HTML:</h3>
   <pre id="htmlOutput"></pre>
@@ -45,17 +56,17 @@
   <iframe id="preview"></iframe>
 
   <script>
-    function convertPug() {
+    document.getElementById('convertBtn').addEventListener('click', function () {
       const pugCode = document.getElementById('pugInput').value;
       try {
-        const html = pug.render(pugCode);
+        const html = window.pug.render(pugCode);
         document.getElementById('htmlOutput').textContent = html;
         document.getElementById('preview').srcdoc = html;
       } catch (err) {
         document.getElementById('htmlOutput').textContent = '❌ Error: ' + err.message;
         document.getElementById('preview').srcdoc = '';
       }
-    }
+    });
   </script>
 </body>
 </html>
