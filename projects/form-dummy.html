@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dummy Form – Notifikasi Sukses</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
+    body { margin: 0; background: #f6f7fb; }
+    .wrap { max-width: 720px; margin: 40px auto; padding: 24px; }
+    .card { background: #fff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.06); padding: 24px; }
+    h1 { margin: 0 0 16px; font-size: 28px; }
+    p.lead { margin-top: 0; color: #54607a; }
+
+    form { display: grid; gap: 14px; }
+    label { font-weight: 600; }
+    input, textarea { width: 100%; padding: 12px 14px; border: 1px solid #d8dbe5; border-radius: 10px; outline: none; font: inherit; background: #fff; }
+    input:focus, textarea:focus { border-color: #7c88ff; box-shadow: 0 0 0 3px rgba(124,136,255,.15); }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .actions { display: flex; gap: 10px; align-items: center; margin-top: 6px; }
+    button { border: 0; border-radius: 999px; padding: 12px 18px; font-weight: 700; cursor: pointer; }
+    button[type="submit"] { background: #7c88ff; color: white; }
+    button[type="button"] { background: #eef0ff; color: #3b46a5; }
+
+    .error { color: #b42318; font-size: 13px; margin-top: 6px; display: none; }
+    .field.invalid input, .field.invalid textarea { border-color: #f39; box-shadow: 0 0 0 3px rgba(255,51,153,.1); }
+    .field.invalid .error { display: block; }
+
+    .success { display: none; border: 1px solid #c7f0d6; background: #ecfdf3; color: #065f46; padding: 16px; border-radius: 12px; margin-top: 18px; }
+    .success h2 { margin: 0 0 6px; font-size: 20px; }
+    .success p { margin: 0; }
+    .summary { margin-top: 10px; background: #fff; border: 1px dashed #cde7d8; padding: 12px; border-radius: 10px; }
+    .summary dt { font-weight: 600; }
+    .summary dd { margin: 0 0 8px; }
+
+    footer { text-align: center; color: #7b849f; font-size: 12px; margin-top: 14px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Form Dummy</h1>
+      <p class="lead">Contoh form HTML + JavaScript yang menampilkan informasi <em>sukses</em> setelah submit.</p>
+
+      <form id="dummyForm" novalidate>
+        <div class="row">
+          <div class="field" id="f-nama">
+            <label for="nama">Nama</label>
+            <input id="nama" name="nama" type="text" placeholder="Nama lengkap" required />
+            <div class="error">Nama wajib diisi.</div>
+          </div>
+          <div class="field" id="f-email">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" placeholder="nama@contoh.com" required />
+            <div class="error">Masukkan email yang valid.</div>
+          </div>
+        </div>
+
+        <div class="field" id="f-pesan">
+          <label for="pesan">Pesan</label>
+          <textarea id="pesan" name="pesan" rows="4" placeholder="Tulis pesan singkat…" required></textarea>
+          <div class="error">Pesan tidak boleh kosong.</div>
+        </div>
+
+        <div class="actions">
+          <button type="submit">Kirim</button>
+          <button type="button" id="resetBtn" aria-label="Reset form">Reset</button>
+        </div>
+      </form>
+
+      <section id="successBox" class="success" role="status" aria-live="polite">
+        <h2>✅ Berhasil!</h2>
+        <p id="successText">Data Anda telah terkirim.</p>
+        <dl class="summary" id="summary" hidden>
+          <dt>Nama</dt><dd id="sNama">—</dd>
+          <dt>Email</dt><dd id="sEmail">—</dd>
+          <dt>Pesan</dt><dd id="sPesan">—</dd>
+        </dl>
+      </section>
+
+      <footer>Tip: ini hanyalah dummy, tidak ada pengiriman ke server.</footer>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('dummyForm');
+    const successBox = document.getElementById('successBox');
+    const successText = document.getElementById('successText');
+    const summary = document.getElementById('summary');
+    const sNama = document.getElementById('sNama');
+    const sEmail = document.getElementById('sEmail');
+    const sPesan = document.getElementById('sPesan');
+    const resetBtn = document.getElementById('resetBtn');
+
+    function setInvalid(fieldEl, invalid) {
+      fieldEl.classList.toggle('invalid', invalid);
+    }
+
+    function validate() {
+      const fields = [
+        { group: document.getElementById('f-nama'), input: document.getElementById('nama'), check: v => v.trim().length > 0 },
+        { group: document.getElementById('f-email'), input: document.getElementById('email'), check: v => /.+@.+\..+/.test(v) },
+        { group: document.getElementById('f-pesan'), input: document.getElementById('pesan'), check: v => v.trim().length > 0 },
+      ];
+
+      let ok = true;
+      fields.forEach(({group, input, check}) => {
+        const valid = check(input.value);
+        setInvalid(group, !valid);
+        ok = ok && valid;
+      });
+      return ok;
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!validate()) return;
+
+      const nama = document.getElementById('nama').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const pesan = document.getElementById('pesan').value.trim();
+
+      // Tampilkan pesan sukses + ringkasan data
+      successText.textContent = `Terima kasih, ${nama}! Form berhasil dikirim (dummy).`;
+      sNama.textContent = nama || '—';
+      sEmail.textContent = email || '—';
+      sPesan.textContent = pesan || '—';
+      summary.hidden = false;
+      successBox.style.display = 'block';
+
+      // Optional: reset field error state
+      document.querySelectorAll('.field.invalid').forEach(el => el.classList.remove('invalid'));
+    });
+
+    resetBtn.addEventListener('click', () => {
+      form.reset();
+      successBox.style.display = 'none';
+      summary.hidden = true;
+      document.querySelectorAll('.field.invalid').forEach(el => el.classList.remove('invalid'));
+      document.getElementById('nama').focus();
+    });
+
+    // Validasi real-time ringan
+    ['input', 'blur'].forEach(evt => {
+      form.addEventListener(evt, (e) => {
+        const t = e.target;
+        if (!(t instanceof HTMLElement)) return;
+        if (t.id === 'nama') setInvalid(document.getElementById('f-nama'), t.value.trim().length === 0);
+        if (t.id === 'email') setInvalid(document.getElementById('f-email'), !/.+@.+\..+/.test(t.value));
+        if (t.id === 'pesan') setInvalid(document.getElementById('f-pesan'), t.value.trim().length === 0);
+      }, true);
+    });
+  </script>
+</body>
+</html>
