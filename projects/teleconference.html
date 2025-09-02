@@ -116,11 +116,11 @@ createBtn.onclick = async () => {
   const offer = await pc.createOffer();
   await pc.setLocalDescription(offer);
 
-  const roomId = generateRoomId(5);  // misalnya "X3A9B"
-  roomInput.value = roomId;
+  // const roomId = generateRoomId(5);  // misalnya "X3A9B"
+  // roomInput.value = roomId;
 
   const roomRef = db.ref("rooms").push();
-  // roomInput.value = roomRef.key;
+  roomInput.value = roomRef.key;
   await roomRef.set({ offer: JSON.stringify(offer) });
 
   roomRef.child("answer").on("value", async snap => {
