@@ -40,10 +40,6 @@
     </div>
   </div>
   <div class="mb-3">
-    <label class="form-label">Key</label>
-    <input id="firebasekey" class="form-control" placeholder="Key">
-  </div>
-  <div class="mb-3">
     <label class="form-label">Room ID</label>
     <input id="roomId" class="form-control" placeholder="Isi / copy Room ID">
   </div>
@@ -135,6 +131,8 @@ createBtn.onclick = async () => {
     }
   });
 
+  listenRoomEnd(roomId);
+
   db.ref("rooms/" + roomRef.key + "/candidates").on("child_added", async snap => {
     const candidate = JSON.parse(snap.val());
     try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch(e) { }
@@ -158,6 +156,7 @@ joinBtn.onclick = async () => {
   const answer = await pc.createAnswer();
   await pc.setLocalDescription(answer);
   await roomRef.child("answer").set(JSON.stringify(answer));
+  listenRoomEnd(roomId);
 
   roomRef.child("candidates").on("child_added", async snap => {
     const candidate = JSON.parse(snap.val());
@@ -166,20 +165,32 @@ joinBtn.onclick = async () => {
 };
 
 hangupBtn.onclick = async () => {
-  if (pc) { pc.close(); pc = null; }
-  if (localStream) {
-    localStream.getTracks().forEach(t => t.stop());
-    localStream = null;
-  }
-  localVideo.srcObject = null;
-  remoteVideo.srcObject = null;
-
+  endCall();
   const roomId = roomInput.value.trim();
-  if (roomId) {
+  if (roomId && db) {
     await db.ref("rooms/" + roomId).remove();
     console.log("Room " + roomId + " deleted from Firebase");
   }
 };
+function endCall() {
+    if (pc) { pc.close(); pc = null; }
+    if (localStream) {
+      localStream.getTracks().forEach(t => t.stop());
+      localStream = null;
+    }
+    localVideo.srcObject = null;
+    remoteVideo.srcObject = null;
+    hangupBtn.classList.add("d-none");
+  }
+function listenRoomEnd(roomId) {
+    const roomRef = db.ref("rooms/" + roomId);
+    roomRef.on("value", snap => {
+      if (!snap.exists()) {
+        console.log("Room deleted, ending call...");
+        endCall();
+      }
+    });
+  }
 </script>
 </body>
 </html>
