@@ -39,7 +39,10 @@
       <video id="remoteVideo" autoplay playsinline></video>
     </div>
   </div>
-
+  <div class="mb-3">
+    <label class="form-label">Key</label>
+    <input id="firebasekey" class="form-control" placeholder="Key">
+  </div>
   <div class="mb-3">
     <label class="form-label">Room ID</label>
     <input id="roomId" class="form-control" placeholder="Isi / copy Room ID">
@@ -50,10 +53,12 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
 <script>
+const params = new URLSearchParams(window.location.search);
+  
 const firebaseConfig = {
-  apiKey: "AIzaSyBbLOJDeh11hbji6yT-cfDUzu1I-Ww0doE",
+  apiKey: params.get("apiKey"),
   authDomain: "sandbox-hs.firebaseapp.com",
-  databaseURL: "https://sandbox-hs-default-rtdb.asia-southeast1.firebasedatabase.app",
+  databaseURL: params.get("databaseURL"),
   projectId: "sandbox-hs",
   storageBucket: "sandbox-hs.firebasestorage.app",
   messagingSenderId: "1006360150008",
