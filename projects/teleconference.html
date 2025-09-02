@@ -96,6 +96,10 @@ function createPeer() {
   };
 }
 
+startBtn.onclick = async () => {
+  await initMedia()
+}
+
 createBtn.onclick = async () => {
   await initMedia();
   createPeer();
