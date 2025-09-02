@@ -12,12 +12,9 @@
   </style>
 </head>
 <body class="container py-4">
-  <h2 class="text-center mb-4">🎥 WebRTC P2P (Firebase Signaling)</h2>
+  <h2 class="text-center mb-4">🎥 WebRTC P2P</h2>
 
   <div class="row g-3 mb-3">
-    <div class="col d-grid">
-      <button id="startBtn" class="btn btn-primary">Start Camera</button>
-    </div>
     <div class="col d-grid">
       <button id="createBtn" class="btn btn-success">Create Room</button>
     </div>
@@ -67,7 +64,6 @@ const db = firebase.database();
 let pc, localStream, remoteStream;
 const iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
 
-const startBtn = document.getElementById("startBtn");
 const createBtn = document.getElementById("createBtn");
 const joinBtn = document.getElementById("joinBtn");
 const hangupBtn = document.getElementById("hangupBtn");
@@ -108,11 +104,7 @@ function createPeer() {
   hangupBtn.classList.remove("d-none");
 }
 
-startBtn.onclick = async () => {
-  await initMedia()
-}
-
-createBtn.onclick = async () => {
+  createBtn.onclick = async () => {
   await initMedia();
   createPeer();
 
@@ -158,12 +150,13 @@ joinBtn.onclick = async () => {
   const answer = await pc.createAnswer();
   await pc.setLocalDescription(answer);
   await roomRef.child("answer").set(JSON.stringify(answer));
-  listenRoomEnd(roomId);
 
   roomRef.child("candidates").on("child_added", async snap => {
     const candidate = JSON.parse(snap.val());
     try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch(e) { }
   });
+
+  listenRoomEnd(roomId);
 };
 
 hangupBtn.onclick = async () => {
