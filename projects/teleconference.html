@@ -104,6 +104,8 @@ function createPeer() {
       db.ref("rooms/" + roomId + "/candidates").push(JSON.stringify(e.candidate));
     }
   };
+
+  hangupBtn.classList.remove("d-none");
 }
 
 startBtn.onclick = async () => {
