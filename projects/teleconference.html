@@ -75,6 +75,15 @@ const roomInput = document.getElementById("roomId");
 const localVideo = document.getElementById("localVideo");
 const remoteVideo = document.getElementById("remoteVideo");
 
+function generateRoomId(length = 5) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let id = '';
+  for (let i = 0; i < length; i++) {
+    id += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return id;
+}
+
 async function initMedia() {
   localStream = await navigator.mediaDevices.getUserMedia({ video:true, audio:true });
   localVideo.srcObject = localStream;
@@ -107,8 +116,11 @@ createBtn.onclick = async () => {
   const offer = await pc.createOffer();
   await pc.setLocalDescription(offer);
 
+  const roomId = generateRoomId(5);  // misalnya "X3A9B"
+  roomInput.value = roomId;
+
   const roomRef = db.ref("rooms").push();
-  roomInput.value = roomRef.key;
+  // roomInput.value = roomRef.key;
   await roomRef.set({ offer: JSON.stringify(offer) });
 
   roomRef.child("answer").on("value", async snap => {
@@ -128,7 +140,8 @@ joinBtn.onclick = async () => {
   await initMedia();
   createPeer();
 
-  const roomId = roomInput.value;
+  // const roomId = roomInput.value;
+  const roomId = roomInput.value.trim();
   const roomRef = db.ref("rooms/" + roomId);
   const roomData = (await roomRef.get()).val();
 
