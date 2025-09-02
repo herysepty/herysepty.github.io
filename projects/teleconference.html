@@ -25,7 +25,7 @@
       <button id="joinBtn" class="btn btn-warning">Join Room</button>
     </div>
     <div class="col d-grid">
-      <button id="hangupBtn" class="btn btn-danger">Hangup</button>
+      <button id="hangupBtn" class="btn btn-danger d-none">Hangup</button>
     </div>
   </div>
 
@@ -137,6 +137,7 @@ createBtn.onclick = async () => {
     const candidate = JSON.parse(snap.val());
     try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch(e) { }
   });
+  hangupBtn.classList.remove("d-none");
 };
 
 joinBtn.onclick = async () => {
@@ -162,6 +163,7 @@ joinBtn.onclick = async () => {
     const candidate = JSON.parse(snap.val());
     try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch(e) { }
   });
+  hangupBtn.classList.remove("d-none");
 };
 
 hangupBtn.onclick = async () => {
