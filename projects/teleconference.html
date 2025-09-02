@@ -160,11 +160,15 @@ joinBtn.onclick = async () => {
   });
 };
 
-hangupBtn.onclick = () => {
+hangupBtn.onclick = async () => {
   if (pc) { pc.close(); pc = null; }
-  if (localStream) localStream.getTracks().forEach(t => t.stop());
+  if (localStream) {
+    localStream.getTracks().forEach(t => t.stop());
+    localStream = null;
+  }
   localVideo.srcObject = null;
   remoteVideo.srcObject = null;
+
   const roomId = roomInput.value.trim();
   if (roomId) {
     await db.ref("rooms/" + roomId).remove();
