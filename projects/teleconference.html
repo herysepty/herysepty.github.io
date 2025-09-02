@@ -137,7 +137,6 @@ createBtn.onclick = async () => {
     const candidate = JSON.parse(snap.val());
     try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch(e) { }
   });
-  hangupBtn.classList.remove("d-none");
 };
 
 joinBtn.onclick = async () => {
@@ -163,7 +162,6 @@ joinBtn.onclick = async () => {
     const candidate = JSON.parse(snap.val());
     try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch(e) { }
   });
-  hangupBtn.classList.remove("d-none");
 };
 
 hangupBtn.onclick = async () => {
@@ -188,6 +186,7 @@ function listenRoomEnd(roomId) {
     const roomRef = db.ref("rooms/" + roomId);
     roomRef.on("value", snap => {
       if (!snap.exists()) {
+        hangupBtn.classList.remove("d-none");
         console.log("Room deleted, ending call...");
         endCall();
       }
