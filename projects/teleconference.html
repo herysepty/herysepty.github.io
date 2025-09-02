@@ -1,194 +1,198 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>P2P Video Call</title>
+  <meta charset="utf-8">
+  <title>WebRTC P2P via Firebase</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    video { width: 100%; border-radius: 12px; }
+    body { background:#f8f9fa; }
+    video { width:100%; border-radius:12px; background:#000; }
   </style>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body class="container py-4">
-  <h2 class="mb-3">📹 P2P Video Call</h2>
+  <h2 class="text-center mb-4">🎥 WebRTC P2P (Firebase Signaling)</h2>
 
-  <div class="mb-3">
-    <input id="roomInput" class="form-control" placeholder="Room ID (5 karakter)">
-  </div>
-  <div class="mb-3">
-    <button id="createBtn" class="btn btn-primary">Create Room</button>
-    <button id="joinBtn" class="btn btn-success">Join Room</button>
-    <button id="hangupBtn" class="btn btn-danger d-none">Hang Up</button>
+  <div class="row g-3 mb-3">
+    <div class="col d-grid">
+      <button id="startBtn" class="btn btn-primary">Start Camera</button>
+    </div>
+    <div class="col d-grid">
+      <button id="createBtn" class="btn btn-success">Create Room</button>
+    </div>
+    <div class="col d-grid">
+      <button id="joinBtn" class="btn btn-warning">Join Room</button>
+    </div>
+    <div class="col d-grid">
+      <button id="hangupBtn" class="btn btn-danger d-none">Hangup</button>
+    </div>
   </div>
 
-  <div class="row">
+  <div class="row g-3 mb-4">
     <div class="col-md-6">
-      <h5>Local</h5>
+      <h5 class="text-center">Local Video</h5>
       <video id="localVideo" autoplay playsinline muted></video>
     </div>
     <div class="col-md-6">
-      <h5>Remote</h5>
+      <h5 class="text-center">Remote Video</h5>
       <video id="remoteVideo" autoplay playsinline></video>
     </div>
   </div>
+  <div class="mb-3">
+    <label class="form-label">Room ID</label>
+    <input id="roomId" class="form-control" placeholder="Isi / copy Room ID">
+  </div>
 
-  <script>
-    // === Ambil config dari query URL ===
-    const params = new URLSearchParams(window.location.search);
-    const firebaseConfig = {
-      apiKey: params.get("apiKey"),
-      databaseURL: params.get("databaseURL"),
-    };
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
-    if (!firebaseConfig.apiKey || !firebaseConfig.databaseURL) {
-      alert("Tambahkan ?apiKey=xxx&databaseURL=xxx di URL");
-    } else {
-      firebase.initializeApp(firebaseConfig);
-      db = firebase.database();
+<script>
+const params = new URLSearchParams(window.location.search);
+  
+const firebaseConfig = {
+  apiKey: params.get("apiKey"),
+  authDomain: "sandbox-hs.firebaseapp.com",
+  databaseURL: params.get("databaseURL"),
+  projectId: "sandbox-hs",
+  storageBucket: "sandbox-hs.firebasestorage.app",
+  messagingSenderId: "1006360150008",
+  appId: "1:1006360150008:web:66096c5f2e41a9b2f3e00d",
+  measurementId: "G-QM618C2FNX"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let pc, localStream, remoteStream;
+const iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
+
+const startBtn = document.getElementById("startBtn");
+const createBtn = document.getElementById("createBtn");
+const joinBtn = document.getElementById("joinBtn");
+const hangupBtn = document.getElementById("hangupBtn");
+const roomInput = document.getElementById("roomId");
+
+const localVideo = document.getElementById("localVideo");
+const remoteVideo = document.getElementById("remoteVideo");
+
+function generateRoomId(length = 5) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let id = '';
+  for (let i = 0; i < length; i++) {
+    id += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return id;
+}
+
+async function initMedia() {
+  localStream = await navigator.mediaDevices.getUserMedia({ video:true, audio:true });
+  localVideo.srcObject = localStream;
+}
+
+function createPeer() {
+  pc = new RTCPeerConnection({ iceServers });
+  remoteStream = new MediaStream();
+  remoteVideo.srcObject = remoteStream;
+
+  localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+  pc.ontrack = e => e.streams[0].getTracks().forEach(t => remoteStream.addTrack(t));
+
+  pc.onicecandidate = e => {
+    if (e.candidate) {
+      const roomId = roomInput.value;
+      db.ref("rooms/" + roomId + "/candidates").push(JSON.stringify(e.candidate));
     }
+  };
+}
 
-    let pc, localStream;
-    const localVideo = document.getElementById("localVideo");
-    const remoteVideo = document.getElementById("remoteVideo");
-    const roomInput = document.getElementById("roomInput");
-    const createBtn = document.getElementById("createBtn");
-    const joinBtn = document.getElementById("joinBtn");
-    const hangupBtn = document.getElementById("hangupBtn");
+startBtn.onclick = async () => {
+  await initMedia()
+}
 
-    // Generate Room ID (5 karakter)
-    function generateRoomId() {
-      return Math.random().toString(36).substring(2, 7).toUpperCase();
+createBtn.onclick = async () => {
+  await initMedia();
+  createPeer();
+
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+
+  // const roomId = generateRoomId(5);  // misalnya "X3A9B"
+  // roomInput.value = roomId;
+
+  const roomRef = db.ref("rooms").push();
+  roomInput.value = roomRef.key;
+  await roomRef.set({ offer: JSON.stringify(offer) });
+
+  roomRef.child("answer").on("value", async snap => {
+    if (snap.val() && !pc.currentRemoteDescription) {
+      const answer = JSON.parse(snap.val());
+      await pc.setRemoteDescription(new RTCSessionDescription(answer));
     }
+  });
 
-    // Setup PeerConnection
-    function setupPeerConnection() {
-      pc = new RTCPeerConnection({
-        iceServers: [
-          { urls: "stun:stun.l.google.com:19302" }
-        ]
-      });
+  listenRoomEnd(roomId);
 
-      pc.ontrack = (event) => {
-        remoteVideo.srcObject = event.streams[0];
-      };
+  db.ref("rooms/" + roomRef.key + "/candidates").on("child_added", async snap => {
+    const candidate = JSON.parse(snap.val());
+    try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch(e) { }
+  });
+  hangupBtn.classList.remove("d-none");
+};
 
-      pc.oniceconnectionstatechange = () => {
-        console.log("ICE state:", pc.iceConnectionState);
+joinBtn.onclick = async () => {
+  await initMedia();
+  createPeer();
 
-        if (["connected", "completed"].includes(pc.iceConnectionState)) {
-          hangupBtn.classList.remove("d-none");
-        }
+  // const roomId = roomInput.value;
+  const roomId = roomInput.value.trim();
+  const roomRef = db.ref("rooms/" + roomId);
+  const roomData = (await roomRef.get()).val();
 
-        if (["disconnected", "failed", "closed"].includes(pc.iceConnectionState)) {
-          hangupBtn.classList.add("d-none");
-          endCall();
-        }
-      };
+  if (!roomData) { alert("Room tidak ada"); return; }
 
-      return pc;
+  const offer = JSON.parse(roomData.offer);
+  await pc.setRemoteDescription(new RTCSessionDescription(offer));
+
+  const answer = await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+  await roomRef.child("answer").set(JSON.stringify(answer));
+  listenRoomEnd(roomId);
+
+  roomRef.child("candidates").on("child_added", async snap => {
+    const candidate = JSON.parse(snap.val());
+    try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch(e) { }
+  });
+  hangupBtn.classList.remove("d-none");
+};
+
+hangupBtn.onclick = async () => {
+  endCall();
+  const roomId = roomInput.value.trim();
+  if (roomId && db) {
+    await db.ref("rooms/" + roomId).remove();
+    console.log("Room " + roomId + " deleted from Firebase");
+  }
+};
+function endCall() {
+    if (pc) { pc.close(); pc = null; }
+    if (localStream) {
+      localStream.getTracks().forEach(t => t.stop());
+      localStream = null;
     }
-
-    // End call
-    function endCall() {
-      if (pc) { pc.close(); pc = null; }
-      if (localStream) {
-        localStream.getTracks().forEach(t => t.stop());
-        localStream = null;
+    localVideo.srcObject = null;
+    remoteVideo.srcObject = null;
+    hangupBtn.classList.add("d-none");
+  }
+function listenRoomEnd(roomId) {
+    const roomRef = db.ref("rooms/" + roomId);
+    roomRef.on("value", snap => {
+      if (!snap.exists()) {
+        console.log("Room deleted, ending call...");
+        endCall();
       }
-      localVideo.srcObject = null;
-      remoteVideo.srcObject = null;
-    }
-
-    // Listen kalau room dihapus
-    function listenRoomEnd(roomId) {
-      const roomRef = db.ref("rooms/" + roomId);
-      roomRef.on("value", snap => {
-        if (!snap.exists()) {
-          console.log("Room deleted by peer, ending call...");
-          hangupBtn.classList.add("d-none");
-          endCall();
-        }
-      });
-    }
-
-    // Create Room
-    createBtn.onclick = async () => {
-      const roomId = generateRoomId();
-      roomInput.value = roomId;
-
-      pc = setupPeerConnection();
-      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      localVideo.srcObject = localStream;
-      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-
-      await db.ref("rooms/" + roomId).set({ offer });
-      listenRoomEnd(roomId);
-
-      db.ref("rooms/" + roomId + "/answer").on("value", async snap => {
-        if (snap.val() && !pc.currentRemoteDescription) {
-          await pc.setRemoteDescription(new RTCSessionDescription(snap.val()));
-        }
-      });
-
-      pc.onicecandidate = (event) => {
-        if (event.candidate) {
-          db.ref("rooms/" + roomId + "/callerCandidates").push(event.candidate.toJSON());
-        }
-      };
-
-      db.ref("rooms/" + roomId + "/calleeCandidates").on("child_added", async snap => {
-        await pc.addIceCandidate(new RTCIceCandidate(snap.val()));
-      });
-    };
-
-    // Join Room
-    joinBtn.onclick = async () => {
-      const roomId = roomInput.value.trim();
-      if (!roomId) return alert("Masukkan Room ID");
-
-      pc = setupPeerConnection();
-      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      localVideo.srcObject = localStream;
-      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-
-      const roomRef = db.ref("rooms/" + roomId);
-      const roomSnap = await roomRef.once("value");
-      if (!roomSnap.exists()) return alert("Room tidak ditemukan");
-
-      const offer = roomSnap.val().offer;
-      await pc.setRemoteDescription(new RTCSessionDescription(offer));
-
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-
-      await roomRef.child("answer").set(answer);
-      listenRoomEnd(roomId);
-
-      pc.onicecandidate = (event) => {
-        if (event.candidate) {
-          roomRef.child("calleeCandidates").push(event.candidate.toJSON());
-        }
-      };
-
-      roomRef.child("callerCandidates").on("child_added", async snap => {
-        await pc.addIceCandidate(new RTCIceCandidate(snap.val()));
-      });
-    };
-
-    // Hangup
-    hangupBtn.onclick = async () => {
-      const roomId = roomInput.value.trim();
-      if (roomId) {
-        await db.ref("rooms/" + roomId).remove();
-        console.log("Room deleted:", roomId);
-      }
-      hangupBtn.classList.add("d-none");
-      endCall();
-    };
-  </script>
+    });
+  }
+</script>
 </body>
 </html>
