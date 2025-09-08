@@ -423,6 +423,7 @@
         }
 
         function loadSample() {
+            // Sample 1: JSON dengan urutan properti berbeda tapi isi sama
             const sample1 = {
                 "name": "John Doe",
                 "age": 30,
@@ -434,15 +435,16 @@
                 }
             };
             
+            // Sample 2: JSON dengan urutan properti berbeda (tapi sebagian isi sama)
             const sample2 = {
-                "name": "John Doe",
-                "age": 31,
-                "city": "Boston",
-                "hobbies": ["reading", "cycling", "photography"],
                 "address": {
-                    "street": "456 Oak Ave",
-                    "zipcode": "02101"
+                    "zipcode": "10001",
+                    "street": "123 Main St"
                 },
+                "city": "New York",
+                "name": "John Doe",
+                "age": 30,
+                "hobbies": ["swimming", "reading"],
                 "country": "USA"
             };
             
